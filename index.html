@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dziennik Redukcji – Piotr</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Redukcja">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ===== CSS RESET & VARIABLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2128;
+  --border: #30363d;
+  --border-light: #21262d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #6e7681;
+  --green: #10b981;
+  --green-dim: #059669;
+  --green-bg: rgba(16,185,129,.12);
+  --blue: #3b82f6;
+  --blue-dim: #2563eb;
+  --blue-bg: rgba(59,130,246,.12);
+  --purple: #8b5cf6;
+  --purple-bg: rgba(139,92,246,.12);
+  --orange: #f97316;
+  --orange-bg: rgba(249,115,22,.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,.12);
+  --yellow: #eab308;
+  --yellow-bg: rgba(234,179,8,.12);
+  --card-bg: #161b22;
+  --card-border: #30363d;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,.4);
+  --font: 'Inter', -apple-system, sans-serif;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ===== LAYOUT ===== */
+.app { display: flex; flex-direction: column; min-height: 100dvh; }
+
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,17,23,.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-light);
+  padding: 12px 16px;
+}
+.header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo-text h1 { font-size: 15px; font-weight: 700; letter-spacing: -.2px; }
+.logo-text p { font-size: 11px; color: var(--text2); }
+
+.smoke-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--green-bg); border: 1px solid rgba(16,185,129,.25);
+  border-radius: 20px; padding: 5px 10px;
+  font-size: 11px; color: var(--green); font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.smoke-pill:hover { background: rgba(16,185,129,.2); }
+
+/* ===== NAV TABS ===== */
+nav {
+  display: flex; gap: 2px;
+  overflow-x: auto; scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: 8px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text2); background: transparent;
+  border: none; cursor: pointer; transition: all .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); background: var(--bg3); }
+.tab-btn.active { color: var(--text); background: var(--bg3); }
+.tab-btn .ti { font-size: 14px; }
+
+/* ===== MAIN CONTENT ===== */
+main { flex: 1; padding: 16px; max-width: 900px; margin: 0 auto; width: 100%; }
+.tab-panel { display: none; animation: fadeIn .3s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text2); margin-bottom: 12px;
+}
+.card-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title-row .card-title { margin-bottom: 0; }
+
+/* ===== GRID ===== */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 600px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== STAT MINI CARDS ===== */
+.stat {
+  background: var(--bg3); border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); padding: 12px;
+  position: relative; overflow: hidden;
+}
+.stat-label { font-size: 10px; color: var(--text2); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 700; line-height: 1; }
+.stat-unit { font-size: 12px; font-weight: 400; color: var(--text2); margin-left: 2px; }
+.stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.stat-green .stat-value { color: var(--green); }
+.stat-blue .stat-value { color: var(--blue); }
+.stat-orange .stat-value { color: var(--orange); }
+.stat-purple .stat-value { color: var(--purple); }
+.stat-dot {
+  position: absolute; right: 10px; top: 10px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor; opacity: .3;
+}
+
+/* ===== PROGRESS RING ===== */
+.ring-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.ring-svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--bg3); }
+.ring-fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1); }
+.ring-label { font-size: 11px; color: var(--text2); text-align: center; font-weight: 500; }
+.ring-val { font-size: 16px; font-weight: 700; text-align: center; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; transition: all .2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--green); color: #fff; }
+.btn-primary:hover { background: var(--green-dim); }
+.btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { background: var(--blue-dim); }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,.25); }
+.btn-danger:hover { background: rgba(239,68,68,.2); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-block { width: 100%; justify-content: center; }
+
+/* ===== FORM ===== */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--text2); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px;
+  color: var(--text); font-size: 14px; font-family: var(--font);
+  transition: border-color .2s;
+  outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16,185,129,.15);
+}
+.form-select option { background: var(--bg3); }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+.form-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ===== RANGE SLIDER ===== */
+input[type="range"] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 3px; background: var(--bg3);
+  border: 1px solid var(--border); outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--green); cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+/* ===== TOGGLE ===== */
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+.toggle {
+  position: relative; width: 42px; height: 24px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; cursor: pointer; transition: .2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--green); border-color: var(--green); }
+.toggle::after {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; top: 2px; left: 2px; transition: .2s;
+}
+.toggle.on::after { left: 20px; }
+.toggle-label { font-size: 13px; color: var(--text2); cursor: pointer; }
+
+/* ===== SEGMENTED CONTROL ===== */
+.segmented {
+  display: inline-flex; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px;
+}
+.seg-btn {
+  padding: 5px 12px; border-radius: 6px; font-size: 12px;
+  font-weight: 600; color: var(--text2); background: transparent;
+  border: none; cursor: pointer; transition: .2s;
+}
+.seg-btn.active { background: var(--card-bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+
+/* ===== WATER TRACKER ===== */
+.water-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: flex-start;
+}
+.water-cup {
+  width: 38px; height: 38px; border-radius: 8px;
+  background: var(--bg3); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; transition: all .2s;
+  user-select: none;
+}
+.water-cup.filled {
+  background: var(--blue-bg); border-color: var(--blue);
+}
+.water-total { font-size: 24px; font-weight: 700; color: var(--blue); }
+.water-goal { font-size: 12px; color: var(--text2); }
+
+/* ===== STREAK ===== */
+.streak-fire { font-size: 28px; }
+.streak-num { font-size: 36px; font-weight: 800; color: var(--orange); line-height: 1; }
+.streak-label { font-size: 12px; color: var(--text2); }
+
+/* ===== CHART WRAPPER ===== */
+.chart-wrap { position: relative; height: 200px; }
+.chart-wrap.tall { height: 260px; }
+
+/* ===== HISTORY TABLE ===== */
+.tbl-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  background: var(--bg3); padding: 9px 10px;
+  text-align: left; font-weight: 600; color: var(--text2);
+  white-space: nowrap; font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+  position: sticky; top: 0;
+}
+tbody tr { border-bottom: 1px solid var(--border-light); transition: background .15s; }
+tbody tr:hover { background: var(--bg3); }
+tbody td { padding: 9px 10px; color: var(--text); white-space: nowrap; }
+td .badge {
+  display: inline-block; padding: 2px 7px; border-radius: 4px;
+  font-size: 10px; font-weight: 600;
+}
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-red { background: var(--red-bg); color: var(--red); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.badge-gray { background: var(--bg3); color: var(--text2); }
+
+/* ===== EXERCISE CARD ===== */
+.ex-card {
+  background: var(--bg3); border: 1px solid var(--border-light);
+  border-radius: 10px; padding: 12px; margin-bottom: 8px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.ex-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--green-bg); color: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.ex-body { flex: 1; }
+.ex-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.ex-sets { font-size: 12px; color: var(--green); font-weight: 600; margin-bottom: 4px; }
+.ex-desc { font-size: 11px; color: var(--text2); line-height: 1.5; margin-bottom: 6px; }
+.ex-link {
+  font-size: 11px; color: var(--blue);
+  text-decoration: none; font-weight: 500;
+}
+.ex-link:hover { text-decoration: underline; }
+.ex-muscle {
+  display: inline-flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;
+}
+.muscle-tag {
+  font-size: 9px; padding: 2px 6px; border-radius: 4px;
+  background: var(--purple-bg); color: var(--purple); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+
+/* ===== SMOKE MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 16px;
+}
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px;
+  width: 100%; max-width: 420px;
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal-stat { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+.modal-stat:last-of-type { border-bottom: none; }
+.modal-stat-label { font-size: 12px; color: var(--text2); }
+.modal-stat-val { font-size: 16px; font-weight: 700; }
+.modal-close { margin-top: 16px; }
+
+/* ===== ALERT / TOAST ===== */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 500; z-index: 300;
+  box-shadow: var(--shadow); opacity: 0; transition: opacity .3s;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* ===== MOBILE BOTTOM NAV ===== */
+@media (max-width: 640px) {
+  nav { display: none; }
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(13,17,23,.95); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border-light);
+    display: flex; z-index: 100;
+  }
+  .bottom-nav .tab-btn {
+    flex: 1; flex-direction: column; gap: 2px;
+    padding: 8px 4px; font-size: 9px; border-radius: 0;
+    justify-content: center;
+  }
+  .bottom-nav .tab-btn .ti { font-size: 18px; }
+  main { padding: 12px; padding-bottom: 80px; }
+}
+@media (min-width: 641px) { .bottom-nav { display: none; } }
+
+/* ===== DIVIDER ===== */
+.divider { height: 1px; background: var(--border-light); margin: 12px 0; }
+.section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+.section-sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+
+/* ===== EMPTY STATE ===== */
+.empty { text-align: center; padding: 40px 16px; color: var(--text2); }
+.empty-icon { font-size: 40px; margin-bottom: 8px; }
+.empty p { font-size: 14px; }
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar-wrap { background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.progress-bar.green { background: var(--green); }
+.progress-bar.blue { background: var(--blue); }
+.progress-bar.orange { background: var(--orange); }
+.progress-bar.red { background: var(--red); }
+
+/* ===== NOTIFICATION DOT ===== */
+.notif-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--red); display: inline-block; margin-left: 4px;
+  animation: pulse 1.5s ease infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  header, nav, .bottom-nav, .btn, .toast, .modal-overlay { display: none !important; }
+  body { background: #fff; color: #000; }
+  .card { border: 1px solid #ddd; page-break-inside: avoid; }
+  main { padding: 0; }
+  .tab-panel { display: block !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">💪</div>
+      <div class="logo-text">
+        <h1>Dziennik Redukcji</h1>
+        <p id="headerDate"></p>
+      </div>
+    </div>
+    <div class="smoke-pill" onclick="showSmokeModal()">
+      🚭 <span id="smokeDays">0</span> dni
+    </div>
+  </div>
+  <nav id="desktopNav"></nav>
+</header>
+
+<!-- MAIN -->
+<main>
+  <!-- === DASHBOARD === -->
+  <div class="tab-panel active" id="panel-dashboard">
+    <div class="grid-4" style="margin-bottom:12px">
+      <div class="stat stat-green">
+        <div class="stat-label">Waga</div>
+        <div class="stat-value" id="statWage">—<span class="stat-unit">kg</span></div>
+        <div class="stat-sub" id="statWageSub">brak danych</div>
+      </div>
+      <div class="stat stat-blue">
+        <div class="stat-label">Do celu</div>
+        <div class="stat-value" id="statDoCelu">—<span class="stat-unit">kg</span></div>
+        <div class="stat-sub">cel: 99 kg</div>
+      </div>
+      <div class="stat stat-orange">
+        <div class="stat-label">Kroki dziś</div>
+        <div class="stat-value" id="statKroki">—</div>
+        <div class="stat-sub">cel: 5 000</div>
+      </div>
+      <div class="stat stat-purple">
+        <div class="stat-label">Seria treningów</div>
+        <div class="stat-value"><span id="statSeria">0</span></div>
+        <div class="stat-sub">tygodnie</div>
+      </div>
+    </div>
+
+    <!-- RINGS ROW -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Dzisiaj – <span id="todayDateLabel"></span></div>
+      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; padding:8px 0">
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="90" height="90" viewBox="0 0 90 90">
+            <circle class="ring-track" cx="45" cy="45" r="38" stroke-width="8"/>
+            <circle class="ring-fill" cx="45" cy="45" r="38" stroke-width="8"
+              stroke="var(--green)" id="ringKcal"
+              stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+          </svg>
+          <div class="ring-val" id="ringKcalVal">—</div>
+          <div class="ring-label">kcal / 2200</div>
+        </div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="90" height="90" viewBox="0 0 90 90">
+            <circle class="ring-track" cx="45" cy="45" r="38" stroke-width="8"/>
+            <circle class="ring-fill" cx="45" cy="45" r="38" stroke-width="8"
+              stroke="var(--blue)" id="ringBialko"
+              stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+          </svg>
+          <div class="ring-val" id="ringBialkoVal">—</div>
+          <div class="ring-label">białko / 165g</div>
+        </div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="90" height="90" viewBox="0 0 90 90">
+            <circle class="ring-track" cx="45" cy="45" r="38" stroke-width="8"/>
+            <circle class="ring-fill" cx="45" cy="45" r="38" stroke-width="8"
+              stroke="var(--blue)" id="ringWoda"
+              stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+          </svg>
+          <div class="ring-val" id="ringWodaVal">—</div>
+          <div class="ring-label">woda / 2500ml</div>
+        </div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="90" height="90" viewBox="0 0 90 90">
+            <circle class="ring-track" cx="45" cy="45" r="38" stroke-width="8"/>
+            <circle class="ring-fill" cx="45" cy="45" r="38" stroke-width="8"
+              stroke="var(--orange)" id="ringKroki"
+              stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+          </svg>
+          <div class="ring-val" id="ringKrokiVal">—</div>
+          <div class="ring-label">kroki / 5 000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title-row">
+        <span class="card-title">Wykres wagi</span>
+        <div class="segmented" id="rangeWaga">
+          <button class="seg-btn" onclick="setRange('waga','7')">7D</button>
+          <button class="seg-btn" onclick="setRange('waga','30')">30D</button>
+          <button class="seg-btn active" onclick="setRange('waga','all')">Wszystko</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chartWaga"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Kalorie (7 dni)</div>
+        <div class="chart-wrap">
+          <canvas id="chartKcal"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Kroki (7 dni)</div>
+        <div class="chart-wrap">
+          <canvas id="chartKroki"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY REPORT -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">Raport tygodniowy</div>
+      <div id="weeklyReport" style="font-size:13px; color:var(--text2); white-space:pre-wrap; font-family:monospace; background:var(--bg3); padding:12px; border-radius:8px; max-height:200px; overflow-y:auto"></div>
+      <div style="display:flex; gap:8px; margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="genWeeklyReport()">📊 Generuj</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyReport()">📋 Kopiuj</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === DODAJ WPIS === -->
+  <div class="tab-panel" id="panel-wpis">
+    <div class="card">
+      <div class="card-title">Nowy wpis dzienny</div>
+
+      <div class="form-group">
+        <label class="form-label">📅 Data</label>
+        <input type="date" class="form-input" id="inputDate">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">⚖️ Waga (kg)</label>
+          <input type="number" class="form-input" id="inputWage" step="0.1" min="50" max="250" placeholder="np. 137.5">
+          <div class="form-hint">Mierz rano, na czczo, po toalecie</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔥 Kalorie (kcal)</label>
+          <input type="number" class="form-input" id="inputKcal" placeholder="cel: 2200">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">🥩 Białko (g)</label>
+          <input type="number" class="form-input" id="inputBialko" placeholder="cel: 165">
+        </div>
+        <div class="form-group">
+          <label class="form-label">👟 Kroki</label>
+          <input type="number" class="form-input" id="inputKroki" placeholder="cel: 5000">
+        </div>
+      </div>
+
+      <!-- WATER -->
+      <div class="form-group">
+        <label class="form-label">💧 Woda (ml) – kliknij kubki</label>
+        <div class="water-grid" id="waterCups" style="margin-bottom:8px"></div>
+        <div style="display:flex; align-items:baseline; gap:6px">
+          <div class="water-total" id="waterDisplay">0</div>
+          <div class="water-goal">/ 2500 ml</div>
+          <input type="number" class="form-input" id="inputWoda" placeholder="lub wpisz ręcznie"
+            style="max-width:160px; margin-left:auto" onchange="syncWater(this.value)">
+        </div>
+        <div class="progress-bar-wrap" style="margin-top:8px">
+          <div class="progress-bar blue" id="waterBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- TRENING -->
+      <div class="form-group">
+        <label class="form-label">💪 Trening</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" id="btnBrakTren" onclick="setTrening('brak')" style="flex:1">❌ Brak</button>
+          <button class="btn btn-secondary btn-sm" id="btnATren" onclick="setTrening('A')" style="flex:1">💪 Plan A</button>
+          <button class="btn btn-secondary btn-sm" id="btnBTren" onclick="setTrening('B')" style="flex:1">🦵 Plan B</button>
+          <button class="btn btn-secondary btn-sm" id="btnInneTren" onclick="setTrening('inne')" style="flex:1">🚴 Inne</button>
+        </div>
+      </div>
+
+      <!-- POSIŁKI -->
+      <div class="form-group">
+        <label class="form-label">🍽️ Posiłki zjedzone</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <div class="toggle-wrap">
+            <div class="toggle" id="togP1" onclick="toggleMeal(1)"></div>
+            <span class="toggle-label">P1 – Śniadanie</span>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle" id="togP2" onclick="toggleMeal(2)"></div>
+            <span class="toggle-label">P2 – Obiad</span>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle" id="togP3" onclick="toggleMeal(3)"></div>
+            <span class="toggle-label">P3 – Kolacja/Nocka</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAMOPOCZUCIE -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">⚡ Energia (1–10)</label>
+          <input type="range" id="inputEnergia" min="1" max="10" value="7" oninput="document.getElementById('energiaVal').textContent=this.value">
+          <div style="text-align:center; font-size:18px; font-weight:700; color:var(--orange)" id="energiaVal">7</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">😴 Sen (1–10)</label>
+          <input type="range" id="inputSen" min="1" max="10" value="7" oninput="document.getElementById('senVal').textContent=this.value">
+          <div style="text-align:center; font-size:18px; font-weight:700; color:var(--purple)" id="senVal">7</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📝 Notatka</label>
+        <textarea class="form-textarea" id="inputNotatka" placeholder="Jak minął dzień? Problemy z dietą, samopoczucie, cokolwiek..."></textarea>
+      </div>
+
+      <div style="display:flex; gap:8px">
+        <button class="btn btn-primary btn-block" onclick="saveEntry()">💾 Zapisz wpis</button>
+        <button class="btn btn-secondary" onclick="clearForm()" style="flex-shrink:0">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === HISTORIA === -->
+  <div class="tab-panel" id="panel-historia">
+    <div class="card">
+      <div class="card-title-row">
+        <span class="card-title">Historia wpisów (<span id="histCount">0</span>)</span>
+        <div class="segmented" id="rangeHist">
+          <button class="seg-btn" onclick="setHistRange('7')">7D</button>
+          <button class="seg-btn" onclick="setHistRange('30')">30D</button>
+          <button class="seg-btn active" onclick="setHistRange('all')">Wszystko</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Waga</th>
+              <th>Kcal</th>
+              <th>Białko</th>
+              <th>Woda</th>
+              <th>Kroki</th>
+              <th>Trening</th>
+              <th>Sen</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><p>Brak wpisów. Dodaj pierwszy wpis!</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">Statystyki zaawansowane</div>
+      <div class="grid-4">
+        <div class="stat stat-green">
+          <div class="stat-label">Średnia waga (7D)</div>
+          <div class="stat-value" id="advAvgWage">—</div>
+        </div>
+        <div class="stat stat-blue">
+          <div class="stat-label">Łączna strata</div>
+          <div class="stat-value" id="advTotal">—</div>
+        </div>
+        <div class="stat stat-orange">
+          <div class="stat-label">Treningi (mies.)</div>
+          <div class="stat-value" id="advWorkouts">—</div>
+        </div>
+        <div class="stat stat-purple">
+          <div class="stat-label">Śr. kcal (7D)</div>
+          <div class="stat-value" id="advAvgKcal">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === TRENING === -->
+  <div class="tab-panel" id="panel-trening">
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex; gap:8px; margin-bottom:12px">
+        <button class="btn btn-primary" id="btnPlanA" onclick="showPlan('A')" style="flex:1">💪 Plan A – Górna</button>
+        <button class="btn btn-secondary" id="btnPlanB" onclick="showPlan('B')" style="flex:1">🦵 Plan B – Dolna</button>
+      </div>
+      <div id="planHeader" class="section-title"></div>
+      <div id="planSub" class="section-sub"></div>
+    </div>
+    <div id="planExercises"></div>
+
+    <!-- WARMUP -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">🔥 Rozgrzewka (5 min – zawsze)</div>
+      <div id="warmupList"></div>
+    </div>
+
+    <!-- COOLDOWN -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">🧘 Stretching po treningu (5 min)</div>
+      <div id="cooldownList"></div>
+    </div>
+  </div>
+
+  <!-- === EKSPORT === -->
+  <div class="tab-panel" id="panel-eksport">
+    <div class="card">
+      <div class="section-title">📤 Eksport danych</div>
+
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="stat" style="cursor:pointer" onclick="exportExcel()">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="font-size:32px">📊</div>
+            <div>
+              <div style="font-size:14px; font-weight:600; margin-bottom:3px">Eksport do Excel (.xlsx)</div>
+              <div style="font-size:12px; color:var(--text2)">Cała historia wpisów w pliku Excel z arkuszem statystyk</div>
+            </div>
+            <button class="btn btn-green" style="margin-left:auto; flex-shrink:0; background:var(--green); color:#fff; padding:8px 14px; border-radius:8px; border:none; font-size:12px; font-weight:600; cursor:pointer" onclick="event.stopPropagation(); exportExcel()">Pobierz</button>
+          </div>
+        </div>
+
+        <div class="stat" style="cursor:pointer" onclick="exportPDF()">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="font-size:32px">📄</div>
+            <div>
+              <div style="font-size:14px; font-weight:600; margin-bottom:3px">Eksport do PDF</div>
+              <div style="font-size:12px; color:var(--text2)">Raport postępów gotowy do wydruku lub wysłania</div>
+            </div>
+            <button class="btn" style="margin-left:auto; flex-shrink:0; background:var(--blue); color:#fff; padding:8px 14px; border-radius:8px; border:none; font-size:12px; font-weight:600; cursor:pointer" onclick="event.stopPropagation(); exportPDF()">Drukuj</button>
+          </div>
+        </div>
+
+        <div class="stat" style="cursor:pointer" onclick="exportJSON()">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="font-size:32px">💾</div>
+            <div>
+              <div style="font-size:14px; font-weight:600; margin-bottom:3px">Backup JSON</div>
+              <div style="font-size:12px; color:var(--text2)">Kopia zapasowa wszystkich danych w formacie JSON</div>
+            </div>
+            <button class="btn" style="margin-left:auto; flex-shrink:0; background:var(--purple); color:#fff; padding:8px 14px; border-radius:8px; border:none; font-size:12px; font-weight:600; cursor:pointer" onclick="event.stopPropagation(); exportJSON()">Pobierz</button>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="font-size:32px">📥</div>
+            <div style="flex:1">
+              <div style="font-size:14px; font-weight:600; margin-bottom:6px">Importuj backup JSON</div>
+              <input type="file" id="importFile" accept=".json" onchange="importJSON(this)" style="font-size:12px; color:var(--text2)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="card-title" style="color:var(--red)">⚠️ Strefa niebezpieczna</div>
+      <p style="font-size:12px; color:var(--text2); margin-bottom:12px">Usunięcie danych jest nieodwracalne. Zrób najpierw backup JSON!</p>
+      <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ Usuń wszystkie dane</button>
+    </div>
+  </div>
+</main>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bottom-nav" id="mobileNav"></nav>
+
+<!-- SMOKE MODAL -->
+<div class="modal-overlay" id="smokeModal" style="display:none" onclick="closeSmokeModal(event)">
+  <div class="modal">
+    <div class="modal-title">🚭 Rzuciłeś palenie!</div>
+    <div class="modal-stat">
+      <span class="modal-stat-label">Dni bez papierosa</span>
+      <span class="modal-stat-val" id="smokeModalDays" style="color:var(--green)">0</span>
+    </div>
+    <div class="modal-stat">
+      <span class="modal-stat-label">Papierosy których nie wypaliłeś</span>
+      <span class="modal-stat-val" id="smokeModalCig">0</span>
+    </div>
+    <div class="modal-stat">
+      <span class="modal-stat-label">Zaoszczędzone pieniądze</span>
+      <span class="modal-stat-val" id="smokeModalPLN" style="color:var(--green)">0 zł</span>
+    </div>
+    <div class="modal-stat">
+      <span class="modal-stat-label">Odzyskane życie (godziny)</span>
+      <span class="modal-stat-val" id="smokeModalLife">0</span>
+    </div>
+    <div class="modal-stat">
+      <span class="modal-stat-label">Równa się to mniej więcej...</span>
+      <span class="modal-stat-val" id="smokeModalEquiv" style="color:var(--purple); font-size:13px">—</span>
+    </div>
+    <button class="btn btn-secondary btn-block modal-close" onclick="closeSmokeModal()">Zamknij</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONSTANTS =====
+const C = {
+  START_WEIGHT: 138.75,
+  GOAL_WEIGHT: 99,
+  KCAL_GOAL: 2200,
+  PROTEIN_GOAL: 165,
+  STEPS_GOAL: 5000,
+  WATER_GOAL: 2500,
+  HEIGHT_M: 1.78,
+  SMOKE_DATE: '2026-05-09',
+  CIG_PER_DAY: 10,
+  PACK_COST_PLN: 22, // per 2 days = 11 PLN/day
+  VERSION: 'pt_v1'
+};
+
+// ===== STORAGE =====
+const store = {
+  get: () => JSON.parse(localStorage.getItem(C.VERSION) || '[]'),
+  save: (d) => localStorage.setItem(C.VERSION, JSON.stringify(d)),
+  add: (e) => { const d = store.get(); const i = d.findIndex(x=>x.date===e.date); if(i>=0) d[i]=e; else d.push(e); d.sort((a,b)=>a.date.localeCompare(b.date)); store.save(d); },
+  del: (date) => { const d = store.get().filter(x=>x.date!==date); store.save(d); }
+};
+
+// ===== STATE =====
+let state = {
+  activeTab: 'dashboard',
+  activePlan: 'A',
+  waterCups: 0,
+  trening: '',
+  meals: [false, false, false],
+  rangeWaga: 'all',
+  rangeHist: 'all',
+  charts: {},
+};
+
+// ===== TABS =====
+const TABS = [
+  {id:'dashboard', label:'Podsumowanie', icon:'🏠'},
+  {id:'wpis', label:'Wpis', icon:'➕'},
+  {id:'historia', label:'Historia', icon:'📊'},
+  {id:'trening', label:'Trening', icon:'💪'},
+  {id:'eksport', label:'Eksport', icon:'📤'},
+];
+
+function buildNav() {
+  const mk = (container) => {
+    container.innerHTML = TABS.map(t =>
+      `<button class="tab-btn${state.activeTab===t.id?' active':''}" onclick="showTab('${t.id}')">
+        <span class="ti">${t.icon}</span> ${t.label}
+       </button>`
+    ).join('');
+  };
+  mk(document.getElementById('desktopNav'));
+  mk(document.getElementById('mobileNav'));
+}
+
+function showTab(id) {
+  state.activeTab = id;
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  buildNav();
+  if(id==='dashboard') refreshDashboard();
+  if(id==='historia') refreshHistory();
+  if(id==='trening') showPlan(state.activePlan);
+}
+
+// ===== SMOKE COUNTER =====
+function updateSmokeCounter() {
+  const start = new Date(C.SMOKE_DATE);
+  const now = new Date();
+  const days = Math.floor((now - start) / 86400000);
+  const cig = days * C.CIG_PER_DAY;
+  const pln = days * 11; // 11 PLN/day (22 PLN per 2 days)
+  const lifeH = Math.round(cig * 11 / 60); // ~11 min per cigarette
+
+  document.getElementById('smokeDays').textContent = days;
+  document.getElementById('smokeModalDays').textContent = days + ' dni';
+  document.getElementById('smokeModalCig').textContent = cig + ' szt.';
+  document.getElementById('smokeModalPLN').textContent = pln.toLocaleString('pl-PL') + ' zł';
+  document.getElementById('smokeModalLife').textContent = lifeH + ' h';
+
+  const equiv = pln >= 1000 ? `~${Math.floor(pln/1000)}× bilety na koncert` :
+                pln >= 500 ? `~${Math.floor(pln/500)}× dobry restauracyjny obiad` :
+                `~${Math.floor(pln/50)}× kawa w kawiarni`;
+  document.getElementById('smokeModalEquiv').textContent = equiv;
+}
+
+function showSmokeModal() { document.getElementById('smokeModal').style.display='flex'; }
+function closeSmokeModal(e) {
+  if(!e || e.target===document.getElementById('smokeModal'))
+    document.getElementById('smokeModal').style.display='none';
+}
+
+// ===== DATE HELPERS =====
+function toDateStr(d) { return d.toISOString().slice(0,10); }
+function today() { return toDateStr(new Date()); }
+function formatDate(str) {
+  if(!str) return '—';
+  const d = new Date(str+'T00:00:00');
+  return d.toLocaleDateString('pl-PL', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+// ===== RING PROGRESS =====
+function setRing(id, val, max) {
+  const circ = 238.76;
+  const pct = Math.min(1, Math.max(0, val / max));
+  const offset = circ - pct * circ;
+  document.getElementById(id).style.strokeDashoffset = offset;
+}
+
+// ===== DASHBOARD =====
+function refreshDashboard() {
+  const data = store.get();
+  const todayStr = today();
+  const todayEntry = data.find(x=>x.date===todayStr);
+
+  document.getElementById('todayDateLabel').textContent = formatDate(todayStr);
+
+  // Top stats
+  if(data.length > 0) {
+    const last = data.filter(x=>x.wage).pop();
+    if(last) {
+      document.getElementById('statWage').innerHTML = last.wage+'<span class="stat-unit">kg</span>';
+      document.getElementById('statWageSub').textContent = formatDate(last.date);
+      const lost = C.START_WEIGHT - last.wage;
+      document.getElementById('statDoCelu').innerHTML = (last.wage - C.GOAL_WEIGHT).toFixed(1)+'<span class="stat-unit">kg</span>';
+    }
+  }
+
+  if(todayEntry) {
+    if(todayEntry.kroki) document.getElementById('statKroki').textContent = Number(todayEntry.kroki).toLocaleString('pl-PL');
+    if(todayEntry.kcal) { document.getElementById('ringKcalVal').textContent = todayEntry.kcal; setRing('ringKcal', todayEntry.kcal, C.KCAL_GOAL); }
+    if(todayEntry.bialko) { document.getElementById('ringBialkoVal').textContent = todayEntry.bialko+'g'; setRing('ringBialko', todayEntry.bialko, C.PROTEIN_GOAL); }
+    if(todayEntry.woda) { document.getElementById('ringWodaVal').textContent = todayEntry.woda+'ml'; setRing('ringWoda', todayEntry.woda, C.WATER_GOAL); }
+    if(todayEntry.kroki) { document.getElementById('ringKrokiVal').textContent = Number(todayEntry.kroki).toLocaleString('pl-PL'); setRing('ringKroki', todayEntry.kroki, C.STEPS_GOAL); }
+  }
+
+  // Streak (consecutive weeks with ≥1 workout)
+  let streak = 0;
+  const workoutDates = data.filter(x=>x.trening && x.trening!=='brak').map(x=>x.date);
+  if(workoutDates.length) {
+    const now = new Date();
+    for(let w=0; w<52; w++) {
+      const wStart = new Date(now); wStart.setDate(now.getDate() - (w+1)*7);
+      const wEnd = new Date(now); wEnd.setDate(now.getDate() - w*7);
+      const hasWorkout = workoutDates.some(d => {
+        const dd = new Date(d+'T00:00:00');
+        return dd >= wStart && dd < wEnd;
+      });
+      if(hasWorkout) streak++; else if(w>0) break;
+    }
+  }
+  document.getElementById('statSeria').textContent = streak;
+
+  buildCharts(data);
+}
+
+function buildCharts(data) {
+  const days = state.rangeWaga === '7' ? 7 : state.rangeWaga === '30' ? 30 : 999;
+  const filtered = data.slice(-days);
+
+  // Weight chart
+  destroyChart('chartWaga');
+  const wCtx = document.getElementById('chartWaga').getContext('2d');
+  state.charts['chartWaga'] = new Chart(wCtx, {
+    type: 'line',
+    data: {
+      labels: filtered.map(x=>formatDate(x.date).slice(0,5)),
+      datasets: [{
+        label: 'Waga (kg)',
+        data: filtered.map(x=>x.wage||null),
+        borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.1)',
+        tension: .35, fill: true, pointRadius: 4, pointHoverRadius: 6,
+        pointBackgroundColor: '#10b981', spanGaps: true
+      },{
+        label: 'Cel 99 kg',
+        data: filtered.map(()=>C.GOAL_WEIGHT),
+        borderColor: 'rgba(239,68,68,.5)', borderDash: [6,3],
+        pointRadius: 0, fill: false
+      }]
+    },
+    options: chartOpts('kg')
+  });
+
+  // Kcal chart (7D)
+  destroyChart('chartKcal');
+  const kCtx = document.getElementById('chartKcal').getContext('2d');
+  const k7 = data.slice(-7);
+  state.charts['chartKcal'] = new Chart(kCtx, {
+    type: 'bar',
+    data: {
+      labels: k7.map(x=>formatDate(x.date).slice(0,5)),
+      datasets: [{
+        label: 'Kalorie',
+        data: k7.map(x=>x.kcal||0),
+        backgroundColor: k7.map(x=>x.kcal && x.kcal<=C.KCAL_GOAL ? 'rgba(16,185,129,.7)' : 'rgba(239,68,68,.7)'),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      ...chartOpts('kcal'),
+      plugins: { ...chartOpts().plugins,
+        annotation: { annotations: { line: { type:'line', yMin:C.KCAL_GOAL, yMax:C.KCAL_GOAL,
+          borderColor:'rgba(255,255,255,.3)', borderWidth:1, borderDash:[4,4] }}}
+      }
+    }
+  });
+
+  // Steps chart (7D)
+  destroyChart('chartKroki');
+  const stCtx = document.getElementById('chartKroki').getContext('2d');
+  state.charts['chartKroki'] = new Chart(stCtx, {
+    type: 'bar',
+    data: {
+      labels: k7.map(x=>formatDate(x.date).slice(0,5)),
+      datasets: [{
+        label: 'Kroki',
+        data: k7.map(x=>x.kroki||0),
+        backgroundColor: k7.map(x=>x.kroki && x.kroki>=C.STEPS_GOAL ? 'rgba(59,130,246,.7)' : 'rgba(249,115,22,.7)'),
+        borderRadius: 4
+      }]
+    },
+    options: chartOpts('kroki')
+  });
+}
+
+function destroyChart(id) {
+  if(state.charts[id]) { state.charts[id].destroy(); delete state.charts[id]; }
+}
+
+function chartOpts(unit='') {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 10, padding: 8 } },
+      tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+        titleColor: '#e6edf3', bodyColor: '#8b949e' }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6e7681', font: { size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6e7681', font: { size: 10 } } }
+    }
+  };
+}
+
+function setRange(chart, val) {
+  state['range'+chart.charAt(0).toUpperCase()+chart.slice(1)] = val;
+  document.querySelectorAll('#range'+chart.charAt(0).toUpperCase()+chart.slice(1)+' .seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.replace('D','').toLowerCase()===val.replace('all','Wszystko').toLowerCase() || (val==='all' && b.textContent==='Wszystko'));
+  });
+  refreshDashboard();
+}
+
+// ===== FORM / ADD ENTRY =====
+function initForm() {
+  document.getElementById('inputDate').value = today();
+  buildWaterCups(0);
+}
+
+function buildWaterCups(filled) {
+  state.waterCups = filled;
+  const N = 10; // 10 cups × 250 ml = 2500 ml
+  const html = Array.from({length:N}, (_,i) =>
+    `<div class="water-cup${i<filled?' filled':''}" onclick="clickCup(${i})" title="${(i+1)*250} ml">💧</div>`
+  ).join('');
+  document.getElementById('waterCups').innerHTML = html;
+  const ml = filled * 250;
+  document.getElementById('waterDisplay').textContent = ml;
+  document.getElementById('inputWoda').value = ml;
+  const pct = Math.min(100, ml / C.WATER_GOAL * 100);
+  document.getElementById('waterBar').style.width = pct+'%';
+}
+
+function clickCup(i) { buildWaterCups(i < state.waterCups ? i : i+1); }
+
+function syncWater(val) {
+  const ml = parseInt(val) || 0;
+  const cups = Math.round(ml / 250);
+  state.waterCups = cups;
+  const N = 10;
+  document.querySelectorAll('.water-cup').forEach((el,i) => el.classList.toggle('filled', i<cups));
+  document.getElementById('waterDisplay').textContent = ml;
+  const pct = Math.min(100, ml / C.WATER_GOAL * 100);
+  document.getElementById('waterBar').style.width = pct+'%';
+}
+
+function setTrening(t) {
+  state.trening = t;
+  ['brak','A','B','inne'].forEach(x => {
+    document.getElementById('btn'+x.charAt(0).toUpperCase()+x.slice(1)+'Tren')?.classList.remove('btn-primary');
+    document.getElementById('btn'+x.charAt(0).toUpperCase()+x.slice(1)+'Tren')?.classList.add('btn-secondary');
+  });
+  const map = {brak:'Brak', A:'A', B:'B', inne:'Inne'};
+  document.getElementById('btn'+map[t]+'Tren')?.classList.replace('btn-secondary','btn-primary');
+}
+
+function toggleMeal(n) {
+  state.meals[n-1] = !state.meals[n-1];
+  document.getElementById('togP'+n).classList.toggle('on', state.meals[n-1]);
+}
+
+function saveEntry() {
+  const date = document.getElementById('inputDate').value;
+  if(!date) { showToast('⚠️ Wybierz datę!'); return; }
+
+  const entry = {
+    date,
+    wage: parseFloat(document.getElementById('inputWage').value) || null,
+    kcal: parseInt(document.getElementById('inputKcal').value) || null,
+    bialko: parseInt(document.getElementById('inputBialko').value) || null,
+    woda: parseInt(document.getElementById('inputWoda').value) || null,
+    kroki: parseInt(document.getElementById('inputKroki').value) || null,
+    trening: state.trening || 'brak',
+    meals: [...state.meals],
+    energia: parseInt(document.getElementById('inputEnergia').value),
+    sen: parseInt(document.getElementById('inputSen').value),
+    notatka: document.getElementById('inputNotatka').value.trim(),
+    saved: new Date().toISOString()
+  };
+
+  store.add(entry);
+  showToast('✅ Wpis zapisany!');
+  clearForm();
+  refreshDashboard();
+}
+
+function clearForm() {
+  document.getElementById('inputDate').value = today();
+  ['inputWage','inputKcal','inputBialko','inputKroki','inputNotatka'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  buildWaterCups(0);
+  state.trening = '';
+  state.meals = [false,false,false];
+  ['togP1','togP2','togP3'].forEach(id => document.getElementById(id).classList.remove('on'));
+  ['Brak','A','B','Inne'].forEach(id => {
+    document.getElementById('btn'+id+'Tren')?.classList.replace('btn-primary','btn-secondary');
+  });
+  document.getElementById('inputEnergia').value = 7;
+  document.getElementById('energiaVal').textContent = '7';
+  document.getElementById('inputSen').value = 7;
+  document.getElementById('senVal').textContent = '7';
+}
+
+// ===== HISTORY =====
+function setHistRange(val) {
+  state.rangeHist = val;
+  document.querySelectorAll('#rangeHist .seg-btn').forEach(b => {
+    b.classList.toggle('active', (val==='7'&&b.textContent==='7D')||(val==='30'&&b.textContent==='30D')||(val==='all'&&b.textContent==='Wszystko'));
+  });
+  refreshHistory();
+}
+
+function refreshHistory() {
+  let data = store.get();
+  const days = state.rangeHist==='7' ? 7 : state.rangeHist==='30' ? 30 : 999;
+  data = data.slice(-days).reverse();
+
+  document.getElementById('histCount').textContent = store.get().length;
+
+  const tbody = document.getElementById('histBody');
+  if(!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><p>Brak wpisów w tym zakresie</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(e => {
+    const wBadge = e.wage ? `<span class="badge badge-green">${e.wage} kg</span>` : '—';
+    const kBadge = e.kcal ? `<span class="badge ${e.kcal<=C.KCAL_GOAL?'badge-green':'badge-red'}">${e.kcal}</span>` : '—';
+    const bBadge = e.bialko ? `<span class="badge badge-blue">${e.bialko}g</span>` : '—';
+    const woBadge = e.woda ? `<span class="badge ${e.woda>=C.WATER_GOAL?'badge-blue':'badge-gray'}">${e.woda}ml</span>` : '—';
+    const stBadge = e.kroki ? `<span class="badge ${e.kroki>=C.STEPS_GOAL?'badge-blue':'badge-gray'}">${Number(e.kroki).toLocaleString('pl-PL')}</span>` : '—';
+    const trBadge = e.trening && e.trening!=='brak'
+      ? `<span class="badge badge-green">💪 ${e.trening}</span>`
+      : `<span class="badge badge-gray">—</span>`;
+    const senBadge = e.sen ? `${e.sen}/10` : '—';
+    return `<tr>
+      <td>${formatDate(e.date)}</td>
+      <td>${wBadge}</td><td>${kBadge}</td><td>${bBadge}</td>
+      <td>${woBadge}</td><td>${stBadge}</td><td>${trBadge}</td>
+      <td>${senBadge}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.date}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+
+  // Advanced stats
+  const all = store.get();
+  const last7 = all.filter(x=>x.wage).slice(-7);
+  const avgW = last7.length ? (last7.reduce((s,x)=>s+x.wage,0)/last7.length).toFixed(1) : '—';
+  document.getElementById('advAvgWage').innerHTML = avgW!=='—' ? avgW+'<span class="stat-unit">kg</span>' : '—';
+
+  const firstW = all.find(x=>x.wage)?.wage;
+  const lastW = all.filter(x=>x.wage).pop()?.wage;
+  if(firstW && lastW) {
+    document.getElementById('advTotal').innerHTML = (firstW-lastW).toFixed(1)+'<span class="stat-unit">kg</span>';
+  }
+
+  const mStart = new Date(); mStart.setDate(1);
+  const workouts = all.filter(x=>x.trening&&x.trening!=='brak'&&new Date(x.date+'T00:00:00')>=mStart).length;
+  document.getElementById('advWorkouts').textContent = workouts;
+
+  const last7k = all.filter(x=>x.kcal).slice(-7);
+  const avgK = last7k.length ? Math.round(last7k.reduce((s,x)=>s+x.kcal,0)/last7k.length) : '—';
+  document.getElementById('advAvgKcal').textContent = avgK!=='—' ? avgK : '—';
+}
+
+function deleteEntry(date) {
+  if(confirm(`Usunąć wpis z ${formatDate(date)}?`)) {
+    store.del(date);
+    showToast('🗑️ Wpis usunięty');
+    refreshHistory();
+    refreshDashboard();
+  }
+}
+
+// ===== WEEKLY REPORT =====
+function genWeeklyReport() {
+  const data = store.get();
+  const last7 = data.slice(-7);
+  if(!last7.length) { document.getElementById('weeklyReport').textContent = 'Brak danych z ostatnich 7 dni.'; return; }
+
+  const avgW = last7.filter(x=>x.wage).map(x=>x.wage);
+  const avgWStr = avgW.length ? (avgW.reduce((a,b)=>a+b,0)/avgW.length).toFixed(1)+' kg' : 'brak';
+  const avgK = last7.filter(x=>x.kcal).map(x=>x.kcal);
+  const avgKStr = avgK.length ? Math.round(avgK.reduce((a,b)=>a+b,0)/avgK.length)+' kcal' : 'brak';
+  const avgS = last7.filter(x=>x.kroki).map(x=>x.kroki);
+  const avgSStr = avgS.length ? Math.round(avgS.reduce((a,b)=>a+b,0)/avgS.length).toLocaleString('pl-PL') : 'brak';
+  const workouts = last7.filter(x=>x.trening&&x.trening!=='brak').length;
+  const avgEn = last7.filter(x=>x.energia).map(x=>x.energia);
+  const avgEnStr = avgEn.length ? (avgEn.reduce((a,b)=>a+b,0)/avgEn.length).toFixed(1)+'/10' : 'brak';
+  const avgSen = last7.filter(x=>x.sen).map(x=>x.sen);
+  const avgSenStr = avgSen.length ? (avgSen.reduce((a,b)=>a+b,0)/avgSen.length).toFixed(1)+'/10' : 'brak';
+  const firstDate = formatDate(last7[0]?.date);
+  const lastDate = formatDate(last7[last7.length-1]?.date);
+  const smokeStart = new Date(C.SMOKE_DATE);
+  const smokeDays = Math.floor((new Date() - smokeStart)/86400000);
+
+  const report = `📊 RAPORT TYGODNIOWY – ${firstDate} do ${lastDate}
+${'─'.repeat(42)}
+⚖️  Średnia waga: ${avgWStr}
+🔥 Średnie kalorie: ${avgKStr} (cel: ${C.KCAL_GOAL})
+🥩 Białko: ${last7.filter(x=>x.bialko).length > 0 ? (last7.filter(x=>x.bialko).reduce((s,x)=>s+x.bialko,0)/last7.filter(x=>x.bialko).length).toFixed(0)+'g/dzień' : 'brak'} (cel: ${C.PROTEIN_GOAL}g)
+👟 Średnie kroki: ${avgSStr} (cel: ${C.STEPS_GOAL.toLocaleString('pl-PL')})
+💪 Treningi: ${workouts}/7 sesji
+⚡  Energia: ${avgEnStr}
+😴 Jakość snu: ${avgSenStr}
+🚭 Dni bez papierosa: ${smokeDays}
+${'─'.repeat(42)}
+Łączna strata wagi: ${(() => { const f=data.find(x=>x.wage)?.wage; const l=data.filter(x=>x.wage).pop()?.wage; return f&&l ? (f-l).toFixed(1)+' kg' : 'brak'; })()}`;
+
+  document.getElementById('weeklyReport').textContent = report;
+}
+
+function copyReport() {
+  const text = document.getElementById('weeklyReport').textContent;
+  if(!text || text.includes('Brak')) { showToast('⚠️ Najpierw wygeneruj raport!'); return; }
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Skopiowano!')).catch(()=>showToast('❌ Błąd kopiowania'));
+}
+
+// ===== TRAINING PLANS =====
+const WARMUP = [
+  { name: 'Krążenia ramionami', sets: '2×10 (każda strona)', desc: 'Stój prosto, zataczaj duże koła ramionami do przodu i do tyłu. Rozgrzewa stawy barkowe.' },
+  { name: 'Skręty tułowia', sets: '2×10', desc: 'Stopy na szerokość bioder, dłonie na biodrach. Skręcaj tułów na boki powoli.' },
+  { name: 'Wykroki w miejscu', sets: '1×10 (każda noga)', desc: 'Krok do przodu, ugięcie kolana do ~90°. Wolno, z kontrolą.' },
+  { name: 'Krążenia bioder', sets: '2×8', desc: 'Nogi na szerokość bioder, dłonie na biodrach. Zataczaj koła biodrami.' },
+];
+
+const COOLDOWN = [
+  { name: 'Rozciąganie klatki piersiowej', sets: '2×30s', desc: 'Złącz dłonie za plecami, wyprostuj ramiona i unieś lekko do góry. Otwiera klatkę piersiową.' },
+  { name: 'Rozciąganie czwórgłowego', sets: '30s każda noga', desc: 'Stój na jednej nodze, zegnij drugą w kolanie i przyciągnij stopę do pośladka. Możesz trzymać się ściany.' },
+  { name: 'Skłon do przodu', sets: '2×30s', desc: 'Stopy razem, powoli pochyl się do przodu, dotykając palcami podłogi lub kostek. Rozluźnij plecy i tył ud.' },
+  { name: 'Skręt leżący (Twisty)', sets: '30s każda strona', desc: 'Połóż się na plecach, zegnij kolana. Opuść kolana na bok, rozłóż ramiona. Rozciąga kręgosłup lędźwiowy.' },
+];
+
+const PLANS = {
+  A: {
+    name: 'Plan A – Górna część ciała',
+    sub: 'Skupia się na klatce, plecach, barkach i bicepsach. Czas: ~35 min. Potrzebne: 2× 9 kg hantle.',
+    exercises: [
+      {
+        name: 'Wiosłowanie jednoręczne hantlem',
+        sets: '3 × 12 powtórzeń (każda strona)',
+        desc: 'Oprzyj jedno kolano i dłoń o ławkę lub krzesło. Trzymaj hantel w opuszczonej ręce. Pociągnij łokieć do góry i do tyłu (jakbyś zaciągał silnik piły). Trzymaj plecy proste. Górna pozycja = łokieć nad poziomem tułowia.',
+        muscles: ['Plecy', 'Biceps', 'Tylny bark'],
+        yt: 'https://www.youtube.com/results?search_query=wiosłowanie+jednoręczne+hantlem'
+      },
+      {
+        name: 'Uginanie ramion – curl bicepsowy',
+        sets: '3 × 15 powtórzeń',
+        desc: 'Stój prosto, hantle wzdłuż tułowia. Uginaj obie ręce jednocześnie, obracając nadgarstki w górę (supinacja). W górnej pozycji ściśnij biceps przez 1 sekundę. Opuszczaj powoli (2–3 s).',
+        muscles: ['Biceps', 'Przedramię'],
+        yt: 'https://www.youtube.com/results?search_query=curl+bicepsowy+hantlem'
+      },
+      {
+        name: 'Wyciskanie hantli nad głowę (siedząc)',
+        sets: '3 × 12 powtórzeń',
+        desc: 'Siedź wyprostowany na krześle lub ławce. Hantle na wysokości uszu, łokcie pod kątem 90°. Wypchnij hantle prosto w górę, nie do przodu. Opuszczaj kontrolowanie. UWAGA: Nie blokuj łokci na górze.',
+        muscles: ['Barki', 'Triceps', 'Górna klatka'],
+        yt: 'https://www.youtube.com/results?search_query=wyciskanie+hantli+nad+głowę+siedząc'
+      },
+      {
+        name: 'Unoszenie hantli w bok (boczne rozpiętki)',
+        sets: '3 × 15 powtórzeń',
+        desc: 'Stój, hantle wzdłuż bioder. Unoś ramiona na boki do poziomu barków (nie wyżej!). Kciuk lekko skierowany w dół. Zatrzymaj 1 s na górze. Używaj powolnego, kontrolowanego ruchu – nie używaj zamachu.',
+        muscles: ['Środkowy bark'],
+        yt: 'https://www.youtube.com/results?search_query=unoszenie+hantli+w+bok+barki'
+      },
+      {
+        name: 'Curl młotkowy (Hammer curl)',
+        sets: '3 × 12 powtórzeń',
+        desc: 'Tak samo jak curl bicepsowy, ale kciuki są skierowane do góry przez cały czas (uścisk młotka). Wolniejszy ruch, mocniej angażuje długą głowę bicepsa i ramiennik.',
+        muscles: ['Biceps (długa głowa)', 'Ramiennik', 'Przedramię'],
+        yt: 'https://www.youtube.com/results?search_query=hammer+curl+hantlem'
+      },
+      {
+        name: 'Odwrotne rozpiętki (Rear delt fly)',
+        sets: '3 × 15 powtórzeń',
+        desc: 'Pochyl się w przód (ok. 45°) lub siedź z tułowiem opartym o uda. Hantle zwisają w dół. Rozkładaj ramiona na boki (jakbyś chciał się "otworzyć"). Poczujesz to między łopatkami i w tylnym barku.',
+        muscles: ['Tylny bark', 'Górne plecy', 'Między łopatkami'],
+        yt: 'https://www.youtube.com/results?search_query=rear+delt+fly+hantlem'
+      },
+    ]
+  },
+  B: {
+    name: 'Plan B – Dolna część ciała + Core',
+    sub: 'Nogi, pośladki, brzuch i dolny krzyż. Czas: ~35 min. Potrzebne: 2× 9 kg hantle, mata.',
+    exercises: [
+      {
+        name: 'Przysiad Goblet z hantlem',
+        sets: '3 × 15 powtórzeń',
+        desc: 'Trzymaj jeden hantel pionowo obiema rękami na klatce piersiowej. Stopy na szerokość bioder, lekko na zewnątrz. Siadaj jak na krzesło: kolana na zewnątrz, plecy proste, pięty na podłodze. Zejdź do 90° lub niżej. Kontrolowany powrót.',
+        muscles: ['Czwórgłowy', 'Pośladki', 'Core'],
+        yt: 'https://www.youtube.com/results?search_query=przysiad+goblet+z+hantlem'
+      },
+      {
+        name: 'Martwy ciąg rumuński z hantlami (RDL)',
+        sets: '3 × 12 powtórzeń',
+        desc: 'Stój, hantle przed udami. Pochyl tułów do przodu, wysuwając pośladki do tyłu (biodrowy zawias – nie zgarbiony kręgosłup!). Hantle zjeżdżają wzdłuż ud do połowy łydki. Napinaj pośladki przy powrocie. UWAGA: nie garbisz pleców – to różni RDL od zwykłego skłonu.',
+        muscles: ['Dwugłowe uda', 'Pośladki', 'Dolny krzyż'],
+        yt: 'https://www.youtube.com/results?search_query=martwy+ciąg+rumuński+hantlami'
+      },
+      {
+        name: 'Wykroki z hantlami',
+        sets: '3 × 10 powtórzeń (każda noga)',
+        desc: 'Stój, hantle w obu rękach. Krok do przodu, opuść tylne kolano prawie do podłogi. Kolano przednie nad stopą, nie za nią. Wróć odpychając się przednią nogą. Możesz chodzić po pokoju lub robić w miejscu.',
+        muscles: ['Czwórgłowy', 'Pośladki', 'Stabilizatory'],
+        yt: 'https://www.youtube.com/results?search_query=wykroki+z+hantlami'
+      },
+      {
+        name: 'Mostek biodrowy (Hip Thrust bez sprzętu)',
+        sets: '3 × 20 powtórzeń',
+        desc: 'Połóż się na plecach, stopy na podłodze (ugięte kolana). Możesz położyć hantle na biodrach dla utrudnienia. Unoś miednicę jak najwyżej, ściskaj pośladki na górze przez 2 s. Powolne opuszczanie. Idealne ćwiczenie dla dolnego kręgosłupa!',
+        muscles: ['Pośladki', 'Dwugłowe uda', 'Dolny krzyż'],
+        yt: 'https://www.youtube.com/results?search_query=mostek+biodrowy+hip+thrust'
+      },
+      {
+        name: 'Plank (Deska)',
+        sets: '3 × 30–45 sekund',
+        desc: 'Oprzyj się na przedramionach i palcach stóp (lub dłoniach, jeśli nadgarstki pozwalają). Ciało w jednej linii jak deska. Napnij brzuch, pośladki i uda. Nie unoś bioder, nie opuszczaj głowy. Oddychaj równomiernie.',
+        muscles: ['Core', 'Stabilizatory', 'Ramiona'],
+        yt: 'https://www.youtube.com/results?search_query=plank+ćwiczenie+technika'
+      },
+      {
+        name: 'Rosyjski skręt z hantlem',
+        sets: '3 × 20 powtórzeń (10 na stronę)',
+        desc: 'Siedź na podłodze, kolana ugięte, stopy lekko uniesione lub oparte. Trzymaj jeden hantel obiema rękami. Odchyl tułów ~45° do tyłu. Skręcaj na boki, hantel dotyka podłogi przy każdym biodrze. Ruch kontrolowany, nie zamachu!',
+        muscles: ['Skośne mięśnie brzucha', 'Core'],
+        yt: 'https://www.youtube.com/results?search_query=rosyjski+skręt+z+hantlem'
+      },
+    ]
+  }
+};
+
+function showPlan(plan) {
+  state.activePlan = plan;
+  document.getElementById('btnPlanA').className = plan==='A' ? 'btn btn-primary' : 'btn btn-secondary';
+  document.getElementById('btnPlanB').className = plan==='B' ? 'btn btn-primary' : 'btn btn-secondary';
+
+  const p = PLANS[plan];
+  document.getElementById('planHeader').textContent = p.name;
+  document.getElementById('planSub').textContent = p.sub;
+
+  document.getElementById('planExercises').innerHTML = p.exercises.map((e,i) => `
+    <div class="ex-card">
+      <div class="ex-num">${i+1}</div>
+      <div class="ex-body">
+        <div class="ex-name">${e.name}</div>
+        <div class="ex-sets">🎯 ${e.sets}</div>
+        <div class="ex-desc">${e.desc}</div>
+        <div class="ex-muscle">${e.muscles.map(m=>`<span class="muscle-tag">${m}</span>`).join('')}</div>
+        <a class="ex-link" href="${e.yt}" target="_blank" rel="noopener">▶️ Obejrzyj na YouTube</a>
+      </div>
+    </div>
+  `).join('');
+
+  const mkEx = (list) => list.map((e,i) => `
+    <div class="ex-card">
+      <div class="ex-num" style="background:var(--orange-bg);color:var(--orange)">${i+1}</div>
+      <div class="ex-body">
+        <div class="ex-name">${e.name}</div>
+        <div class="ex-sets">⏱️ ${e.sets}</div>
+        <div class="ex-desc">${e.desc}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('warmupList').innerHTML = mkEx(WARMUP);
+  document.getElementById('cooldownList').innerHTML = mkEx(COOLDOWN);
+}
+
+// ===== EXPORT =====
+function exportExcel() {
+  const data = store.get();
+  if(!data.length) { showToast('⚠️ Brak danych do eksportu!'); return; }
+
+  const ws_data = [
+    ['Data','Waga (kg)','Kcal','Białko (g)','Woda (ml)','Kroki','Trening','Energia','Sen','P1','P2','P3','Notatka']
+  ];
+  data.forEach(e => ws_data.push([
+    e.date, e.wage||'', e.kcal||'', e.bialko||'', e.woda||'', e.kroki||'',
+    e.trening||'', e.energia||'', e.sen||'',
+    e.meals?.[0]?'tak':'nie', e.meals?.[1]?'tak':'nie', e.meals?.[2]?'tak':'nie',
+    e.notatka||''
+  ]));
+
+  // Stats sheet
+  const wages = data.filter(x=>x.wage).map(x=>x.wage);
+  const ws_stats = [
+    ['Statystyki',''],
+    ['Data startu','22.04.2026'],
+    ['Waga startowa',C.START_WEIGHT+' kg'],
+    ['Cel',C.GOAL_WEIGHT+' kg'],
+    ['Wzrost',C.HEIGHT_M*100+' cm'],
+    [''],
+    ['Pomiary',data.length],
+    ['Najwyższa waga', wages.length ? Math.max(...wages)+' kg' : '—'],
+    ['Najniższa waga', wages.length ? Math.min(...wages)+' kg' : '—'],
+    ['Aktualna waga', wages.length ? wages[wages.length-1]+' kg' : '—'],
+    ['Strata łączna', wages.length ? (wages[0]-wages[wages.length-1]).toFixed(1)+' kg' : '—'],
+    [''],
+    ['Niepalenie',''],
+    ['Data rzucenia','09.05.2026'],
+    ['Dni bez papierosa', Math.floor((new Date()-new Date(C.SMOKE_DATE))/86400000)],
+    ['Zaoszczędzone', Math.floor((new Date()-new Date(C.SMOKE_DATE))/86400000)*11+' zł'],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  const wss = XLSX.utils.aoa_to_sheet(ws_stats);
+
+  // Column widths
+  ws['!cols'] = [12,10,8,10,10,10,10,10,8,6,6,6,40].map(w=>({wch:w}));
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Dziennik');
+  XLSX.utils.book_append_sheet(wb, wss, 'Statystyki');
+
+  const fname = `redukcja_piotr_${today()}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast('📊 Plik Excel gotowy!');
+}
+
+function exportJSON() {
+  const data = store.get();
+  if(!data.length) { showToast('⚠️ Brak danych!'); return; }
+  const blob = new Blob([JSON.stringify({version:C.VERSION, exported:new Date().toISOString(), constants:C, data}, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `backup_piotr_${today()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('💾 Backup JSON pobrany!');
+}
+
+function importJSON(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const obj = JSON.parse(e.target.result);
+      const arr = obj.data || obj;
+      if(!Array.isArray(arr)) throw new Error('Nieprawidłowy format');
+      if(confirm(`Importować ${arr.length} wpisów? Istniejące dane z tych samych dat zostaną nadpisane.`)) {
+        arr.forEach(entry => store.add(entry));
+        showToast(`✅ Zaimportowano ${arr.length} wpisów!`);
+        refreshDashboard();
+        refreshHistory();
+      }
+    } catch(err) { showToast('❌ Błąd importu: '+err.message); }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function exportPDF() {
+  genWeeklyReport();
+  setTimeout(() => window.print(), 300);
+}
+
+function clearAllData() {
+  if(confirm('⚠️ UWAGA! Ta akcja NIEODWRACALNIE usunie wszystkie dane!\n\nCzy na pewno chcesz usunąć wszystkie wpisy?\n\nNajpierw zrób backup JSON!')) {
+    if(confirm('Ostatnia szansa! Czy jesteś absolutnie pewny?')) {
+      localStorage.removeItem(C.VERSION);
+      showToast('🗑️ Dane usunięte');
+      refreshDashboard();
+      refreshHistory();
+    }
+  }
+}
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== HEADER DATE =====
+function updateHeaderDate() {
+  const now = new Date();
+  document.getElementById('headerDate').textContent = now.toLocaleDateString('pl-PL', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  });
+}
+
+// ===== INIT =====
+function init() {
+  updateHeaderDate();
+  updateSmokeCounter();
+  buildNav();
+  initForm();
+  showPlan('A');
+  refreshDashboard();
+  setInterval(updateSmokeCounter, 60000);
+  setInterval(updateHeaderDate, 60000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
