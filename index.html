@@ -420,6 +420,50 @@ td .badge {
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
 
+/* ===== SYNC STATUS ===== */
+.sync-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; padding: 4px 10px;
+  border-radius: 20px; border: 1px solid transparent;
+  transition: all .3s;
+}
+.sync-ok   { background: var(--green-bg);  color: var(--green);  border-color: rgba(16,185,129,.25); }
+.sync-warn { background: var(--orange-bg); color: var(--orange); border-color: rgba(249,115,22,.25); }
+.sync-err  { background: var(--red-bg);    color: var(--red);    border-color: rgba(239,68,68,.25); }
+.sync-spin { display: inline-block; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== GIST SETUP BOX ===== */
+.gist-setup {
+  background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(139,92,246,.08));
+  border: 1px solid rgba(59,130,246,.25);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+}
+.gist-setup h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--blue); }
+.gist-setup p  { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.6; }
+.gist-steps { counter-reset: step; list-style: none; margin-bottom: 14px; }
+.gist-steps li {
+  counter-increment: step; position: relative;
+  padding: 6px 0 6px 28px; font-size: 12px; color: var(--text2);
+  border-bottom: 1px solid var(--border-light);
+}
+.gist-steps li:last-child { border-bottom: none; }
+.gist-steps li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 7px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--blue-bg); color: var(--blue);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.gist-steps a { color: var(--blue); }
+.gist-connected {
+  background: var(--green-bg); border: 1px solid rgba(16,185,129,.25);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+
 /* ===== PRINT STYLES ===== */
 @media print {
   header, nav, .bottom-nav, .btn, .toast, .modal-overlay { display: none !important; }
@@ -442,8 +486,13 @@ td .badge {
         <p id="headerDate"></p>
       </div>
     </div>
-    <div class="smoke-pill" onclick="showSmokeModal()">
-      🚭 <span id="smokeDays">0</span> dni
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sync-status sync-warn" id="syncStatus" onclick="gist.manualSync()" title="Kliknij aby zsynchronizować" style="cursor:pointer">
+        <span id="syncIcon">☁️</span> <span id="syncText">Brak sync</span>
+      </div>
+      <div class="smoke-pill" onclick="showSmokeModal()">
+        🚭 <span id="smokeDays">0</span> dni
+      </div>
     </div>
   </div>
   <nav id="desktopNav"></nav>
@@ -751,6 +800,42 @@ td .badge {
 
   <!-- === EKSPORT === -->
   <div class="tab-panel" id="panel-eksport">
+
+    <!-- GIST SYNC -->
+    <div id="gistSetupBox" class="gist-setup" style="display:none">
+      <h3>☁️ Synchronizacja między urządzeniami</h3>
+      <p>Połącz tracker z GitHub Gist — dane będą dostępne na telefonie, komputerze i wszędzie. Potrzebujesz konta GitHub (masz je już jako <strong>piotrpavv-blip</strong>).</p>
+      <ol class="gist-steps">
+        <li>Wejdź na <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a></li>
+        <li>W polu <em>Note</em> wpisz: <strong>Dziennik Redukcji</strong></li>
+        <li>W sekcji <em>Select scopes</em> zaznacz tylko: <strong>✅ gist</strong></li>
+        <li>Kliknij zielony przycisk <strong>Generate token</strong> na dole</li>
+        <li>Skopiuj token (zaczyna się od <code>ghp_</code>) i wklej poniżej</li>
+      </ol>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Token GitHub (Personal Access Token)</label>
+        <input type="password" class="form-input" id="gistTokenInput" placeholder="ghp_xxxxxxxxxxxxx" autocomplete="off">
+        <div class="form-hint">Token jest zapisywany tylko lokalnie na tym urządzeniu. GitHub może go wyświetlić tylko raz!</div>
+      </div>
+      <button class="btn btn-blue btn-block" onclick="gist.connect()">🔗 Połącz z GitHub Gist</button>
+    </div>
+
+    <div id="gistConnectedBox" style="display:none">
+      <div class="gist-connected">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--green)">✅ Synchronizacja aktywna</div>
+          <div style="font-size:11px;color:var(--text2)" id="gistIdLabel">Gist: —</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="gist.manualSync()">🔄 Sync teraz</button>
+          <button class="btn btn-danger btn-sm" onclick="gist.disconnect()">Rozłącz</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:0 4px">
+        💡 Dane synchronizują się automatycznie po każdym zapisie wpisu oraz przy otwarciu strony. Kliknij ikonę ☁️ w nagłówku aby zsynchronizować ręcznie.
+      </div>
+    </div>
+
     <div class="card">
       <div class="section-title">📤 Eksport danych</div>
 
@@ -843,6 +928,187 @@ td .badge {
 <div class="toast" id="toast"></div>
 
 <script>
+// ===== GITHUB GIST SYNC =====
+const GIST_FILE = 'dziennik_redukcji_piotr.json';
+const KEY_TOKEN = 'pt_gist_token';
+const KEY_GIST_ID = 'pt_gist_id';
+
+const gist = {
+  token: () => localStorage.getItem(KEY_TOKEN),
+  id:    () => localStorage.getItem(KEY_GIST_ID),
+
+  // Connect: save token, find or create Gist, initial pull
+  async connect() {
+    const token = document.getElementById('gistTokenInput').value.trim();
+    if(!token || !token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+      showToast('⚠️ Wklej poprawny token (zaczyna się od ghp_)'); return;
+    }
+    gist.setStatus('spin', 'Łączenie...');
+    try {
+      // Verify token
+      const me = await gist._req('GET', 'https://api.github.com/user', token);
+      if(!me.login) throw new Error('Nieprawidłowy token');
+
+      localStorage.setItem(KEY_TOKEN, token);
+
+      // Find existing gist or create new
+      let gistId = await gist._findGist(token);
+      if(!gistId) gistId = await gist._createGist(token);
+      localStorage.setItem(KEY_GIST_ID, gistId);
+
+      // Pull data from gist
+      await gist._pull(token, gistId);
+
+      gist.updateUI();
+      showToast('✅ Połączono z GitHub Gist!');
+      refreshDashboard();
+      refreshHistory();
+    } catch(e) {
+      gist.setStatus('err', 'Błąd połączenia');
+      showToast('❌ Błąd: ' + e.message);
+      localStorage.removeItem(KEY_TOKEN);
+    }
+  },
+
+  disconnect() {
+    if(!confirm('Rozłączyć synchronizację? Dane lokalne pozostaną.')) return;
+    localStorage.removeItem(KEY_TOKEN);
+    localStorage.removeItem(KEY_GIST_ID);
+    gist.updateUI();
+    showToast('🔌 Rozłączono');
+  },
+
+  // Called after every saveEntry()
+  async autoSync() {
+    if(!gist.token() || !gist.id()) return;
+    await gist._push(gist.token(), gist.id());
+  },
+
+  // Manual sync button
+  async manualSync() {
+    if(!gist.token() || !gist.id()) {
+      showToast('⚠️ Najpierw skonfiguruj synchronizację w zakładce Eksport');
+      return;
+    }
+    gist.setStatus('spin', 'Synchronizacja...');
+    try {
+      await gist._pull(gist.token(), gist.id());
+      await gist._push(gist.token(), gist.id());
+      gist.setStatus('ok', 'Zsync ' + new Date().toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'}));
+      showToast('✅ Zsynchronizowano!');
+      refreshDashboard();
+      refreshHistory();
+    } catch(e) {
+      gist.setStatus('err', 'Błąd sync');
+      showToast('❌ Błąd sync: ' + e.message);
+    }
+  },
+
+  // Auto-pull on page load
+  async onLoad() {
+    if(!gist.token() || !gist.id()) {
+      gist.updateUI(); return;
+    }
+    gist.setStatus('spin', 'Ładowanie...');
+    try {
+      await gist._pull(gist.token(), gist.id());
+      gist.setStatus('ok', 'Zsync ' + new Date().toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'}));
+      refreshDashboard();
+      refreshHistory();
+    } catch(e) {
+      gist.setStatus('warn', 'Offline');
+    }
+    gist.updateUI();
+  },
+
+  // Merge remote and local — newest entry by date wins (by saved timestamp)
+  _merge(remote, local) {
+    const map = {};
+    [...remote, ...local].forEach(e => {
+      if(!map[e.date] || (e.saved && map[e.date].saved && e.saved > map[e.date].saved))
+        map[e.date] = e;
+    });
+    return Object.values(map).sort((a,b) => a.date.localeCompare(b.date));
+  },
+
+  async _pull(token, gistId) {
+    const g = await gist._req('GET', `https://api.github.com/gists/${gistId}`, token);
+    const raw = g.files?.[GIST_FILE]?.content;
+    if(!raw) return;
+    const remote = JSON.parse(raw);
+    if(!Array.isArray(remote)) return;
+    const local = store.get();
+    const merged = gist._merge(remote, local);
+    store.save(merged);
+  },
+
+  async _push(token, gistId) {
+    const data = store.get();
+    await gist._req('PATCH', `https://api.github.com/gists/${gistId}`, token, {
+      files: { [GIST_FILE]: { content: JSON.stringify(data, null, 2) } }
+    });
+    gist.setStatus('ok', 'Zsync ' + new Date().toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'}));
+  },
+
+  async _findGist(token) {
+    const list = await gist._req('GET', 'https://api.github.com/gists?per_page=100', token);
+    const found = list.find(g => g.files?.[GIST_FILE]);
+    return found ? found.id : null;
+  },
+
+  async _createGist(token) {
+    const data = store.get();
+    const g = await gist._req('POST', 'https://api.github.com/gists', token, {
+      description: 'Dziennik Redukcji – Piotr (auto-sync)',
+      public: false,
+      files: { [GIST_FILE]: { content: JSON.stringify(data, null, 2) } }
+    });
+    return g.id;
+  },
+
+  async _req(method, url, token, body) {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  setStatus(type, text) {
+    const el = document.getElementById('syncStatus');
+    const icon = document.getElementById('syncIcon');
+    const txt = document.getElementById('syncText');
+    el.className = 'sync-status';
+    if(type==='ok')   { el.classList.add('sync-ok');   icon.textContent='✅'; }
+    if(type==='warn') { el.classList.add('sync-warn'); icon.textContent='☁️'; }
+    if(type==='err')  { el.classList.add('sync-err');  icon.textContent='⚠️'; }
+    if(type==='spin') { el.classList.add('sync-warn'); icon.innerHTML='<span class="sync-spin">⟳</span>'; }
+    txt.textContent = text;
+  },
+
+  updateUI() {
+    const connected = !!(gist.token() && gist.id());
+    document.getElementById('gistSetupBox').style.display = connected ? 'none' : 'block';
+    document.getElementById('gistConnectedBox').style.display = connected ? 'block' : 'none';
+    if(connected) {
+      const shortId = gist.id()?.slice(0,8)+'...';
+      document.getElementById('gistIdLabel').textContent = `Gist ID: ${shortId}`;
+      gist.setStatus('ok', 'Aktywna');
+    } else {
+      gist.setStatus('warn', 'Brak sync');
+    }
+  }
+};
+
 // ===== CONSTANTS =====
 const C = {
   START_WEIGHT: 138.75,
@@ -1167,6 +1433,7 @@ function saveEntry() {
   showToast('✅ Wpis zapisany!');
   clearForm();
   refreshDashboard();
+  gist.autoSync();
 }
 
 function clearForm() {
@@ -1577,6 +1844,8 @@ function init() {
   refreshDashboard();
   setInterval(updateSmokeCounter, 60000);
   setInterval(updateHeaderDate, 60000);
+  // Gist: aktualizuj UI i pobierz dane przy starcie
+  gist.onLoad();
 }
 
 document.addEventListener('DOMContentLoaded', init);
