@@ -312,6 +312,8 @@ td .badge {
 .badge-red { background: var(--red-bg); color: var(--red); }
 .badge-blue { background: var(--blue-bg); color: var(--blue); }
 .badge-gray { background: var(--bg3); color: var(--text2); }
+.note-cell { max-width: 160px; white-space: normal !important; }
+.note-preview { display: block; font-size: 11px; color: var(--text2); line-height: 1.4; cursor: default; }
 
 /* ===== EXERCISE CARD ===== */
 .ex-card {
@@ -740,11 +742,12 @@ td .badge {
               <th>Kroki</th>
               <th>Trening</th>
               <th>Sen</th>
+              <th>Notatka</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="histBody">
-            <tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><p>Brak wpisów. Dodaj pierwszy wpis!</p></div></td></tr>
+            <tr><td colspan="10"><div class="empty"><div class="empty-icon">📭</div><p>Brak wpisów. Dodaj pierwszy wpis!</p></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1472,7 +1475,7 @@ function refreshHistory() {
 
   const tbody = document.getElementById('histBody');
   if(!data.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><p>Brak wpisów w tym zakresie</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="empty-icon">📭</div><p>Brak wpisów w tym zakresie</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(e => {
@@ -1485,11 +1488,16 @@ function refreshHistory() {
       ? `<span class="badge badge-green">💪 ${e.trening}</span>`
       : `<span class="badge badge-gray">—</span>`;
     const senBadge = e.sen ? `${e.sen}/10` : '—';
+    const note = e.notatka || '';
+    const noteTd = note
+      ? `<td class="note-cell" title="${note.replace(/"/g,'&quot;')}"><span class="note-preview">${note.length>40?note.slice(0,40)+'…':note}</span></td>`
+      : `<td>—</td>`;
     return `<tr>
       <td>${formatDate(e.date)}</td>
       <td>${wBadge}</td><td>${kBadge}</td><td>${bBadge}</td>
       <td>${woBadge}</td><td>${stBadge}</td><td>${trBadge}</td>
       <td>${senBadge}</td>
+      ${noteTd}
       <td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.date}')">🗑</button></td>
     </tr>`;
   }).join('');
@@ -1506,7 +1514,7 @@ function refreshHistory() {
     document.getElementById('advTotal').innerHTML = (firstW-lastW).toFixed(1)+'<span class="stat-unit">kg</span>';
   }
 
-  const mStart = new Date(); mStart.setDate(1);
+  const mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0);
   const workouts = all.filter(x=>x.trening&&x.trening!=='brak'&&new Date(x.date+'T00:00:00')>=mStart).length;
   document.getElementById('advWorkouts').textContent = workouts;
 
@@ -1765,8 +1773,15 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, wss, 'Statystyki');
 
   const fname = `redukcja_piotr_${today()}.xlsx`;
-  XLSX.writeFile(wb, fname);
-  showToast('📊 Plik Excel gotowy!');
+  try {
+    // Blob download — działa na mobile i desktop
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'binary'});
+    const s2ab = s => { const buf = new ArrayBuffer(s.length); const v = new Uint8Array(buf); for(let i=0;i<s.length;i++) v[i]=s.charCodeAt(i)&0xff; return buf; };
+    const blob = new Blob([s2ab(wbout)], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('📊 Plik Excel gotowy!');
+  } catch(err) { showToast('❌ Błąd Excel: '+err.message); }
 }
 
 function exportJSON() {
@@ -1802,8 +1817,74 @@ function importJSON(input) {
 }
 
 function exportPDF() {
+  const data = store.get();
+  if(!data.length) { showToast('⚠️ Brak danych do eksportu!'); return; }
+
+  // Wygeneruj raport tygodniowy
   genWeeklyReport();
-  setTimeout(() => window.print(), 300);
+  const reportText = document.getElementById('weeklyReport').textContent || '';
+
+  const last = data.filter(x=>x.wage).pop();
+  const lost = last ? (C.START_WEIGHT - last.wage).toFixed(1) : '—';
+  const smokeDays = Math.floor((new Date()-new Date(C.SMOKE_DATE))/86400000);
+
+  const rows = [...data].reverse().slice(0,30).map(e => `
+    <tr>
+      <td>${formatDate(e.date)}</td>
+      <td>${e.wage||'—'} kg</td>
+      <td>${e.kcal||'—'}</td>
+      <td>${e.bialko||'—'}g</td>
+      <td>${e.woda||'—'}ml</td>
+      <td>${e.kroki||'—'}</td>
+      <td>${e.trening||'—'}</td>
+      <td>${e.sen||'—'}/10</td>
+      <td style="max-width:180px;white-space:normal;font-size:9px">${(e.notatka||'').slice(0,80)}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8">
+<title>Raport Redukcji – Piotr ${today()}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:20px}
+  h1{font-size:18px;margin-bottom:4px}
+  h2{font-size:13px;margin:16px 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
+  .meta{color:#555;font-size:10px;margin-bottom:16px}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  .stat-box{border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center}
+  .stat-val{font-size:20px;font-weight:700;color:#059669}
+  .stat-lbl{font-size:9px;color:#666;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:9px}
+  th{background:#f3f4f6;padding:5px 6px;text-align:left;font-size:8px;text-transform:uppercase;letter-spacing:.3px}
+  td{padding:4px 6px;border-bottom:1px solid #eee}
+  tr:nth-child(even) td{background:#fafafa}
+  pre{font-family:monospace;font-size:9px;background:#f8f8f8;padding:10px;border-radius:4px;white-space:pre-wrap}
+  @page{margin:15mm}
+</style></head><body>
+<h1>📉 Dziennik Redukcji – Piotr</h1>
+<div class="meta">Wygenerowano: ${new Date().toLocaleString('pl-PL')} | Start: 138,75 kg | Cel: 99 kg</div>
+
+<div class="stats-grid">
+  <div class="stat-box"><div class="stat-val">${last?last.wage:'—'} kg</div><div class="stat-lbl">Aktualna waga</div></div>
+  <div class="stat-box"><div class="stat-val">${lost} kg</div><div class="stat-lbl">Łączna strata</div></div>
+  <div class="stat-box"><div class="stat-val">${data.length}</div><div class="stat-lbl">Dni zapisanych</div></div>
+  <div class="stat-box"><div class="stat-val">${smokeDays}</div><div class="stat-lbl">Dni bez papierosa</div></div>
+</div>
+
+<h2>Historia wpisów (ostatnie 30 dni)</h2>
+<table>
+  <thead><tr><th>Data</th><th>Waga</th><th>Kcal</th><th>Białko</th><th>Woda</th><th>Kroki</th><th>Trening</th><th>Sen</th><th>Notatka</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+
+<h2>Raport tygodniowy</h2>
+<pre>${reportText}</pre>
+</body></html>`;
+
+  const win = window.open('','_blank','width=800,height=600');
+  if(!win) { showToast('⚠️ Zezwól na wyskakujące okna i spróbuj ponownie'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { win.focus(); win.print(); }, 400);
+  showToast('📄 Otwarto podgląd wydruku!');
 }
 
 function clearAllData() {
